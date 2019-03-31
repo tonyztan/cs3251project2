@@ -48,9 +48,6 @@ def handle_request(connection, request):
     elif (len(request) > 10) and (request[0:10] == "subscribe "):
         # TODO: subscribe logic goes here
 
-    elif (len(request) == 9) and (request == "timeline"):
-        # TODO: timeline logic goes here
-
     elif (len(request) > 6) and (request[0:6] == "tweet "):
         # TODO: tweet logic goes here
 
