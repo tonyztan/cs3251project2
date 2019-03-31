@@ -14,6 +14,12 @@ __copyright__ = "Copyright 2019, Matthew Wang and Tony Tan"
 __license__ = "MIT"
 __version__ = "1.0"
 
+# Placeholder variables to make them accessible to all methods
+inputs = []
+outputs = []
+messsage_queues = {}
+connected_users = {}
+
 def usage():
     """
     Prints out usage information for the progam and then exits.
@@ -23,15 +29,44 @@ def usage():
     print 'ServerPort must be valid.'
     exit()
 
+def send_to_client(connection, data):
+    """
+    This method is used to send the specified data to the connection socket.
+    It works by adding the information to the appropriate queues.
+    """
+    message_queues[connection].put(data)
+    if connection not in outputs:
+        outputs.append(connection)
+
+def handle_request(connection, request):
+    if (len(request) > 13) and (request[0:13] == "set username "):
+        # TODO: username logic goes here
+
+    elif (len(request) > 12) and (request[0:12] == "unsubscribe "):
+        # TODO: unsubscribe logic goes here
+
+    elif (len(request) > 10) and (request[0:10] == "subscribe "):
+        # TODO: subscribe logic goes here
+
+    elif (len(request) == 9) and (request == "timeline"):
+        # TODO: timeline logic goes here
+
+    elif (len(request) > 6) and (request[0:6] == "tweet "):
+        # TODO: tweet logic goes here
+
+    elif (len(request) == 4) and (request == "exit"):
+        # TODO: exit logic goes here
+
+    else:
+        # TODO: invalid request logic goes here
+
 # Consulted: https://pymotw.com/2/select/
 def server(port):
-    # TODO: Implement Server
     """
     Runs the server at the specified port.
     """
 
     try:
-
 
         # Create the server socket
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -50,8 +85,11 @@ def server(port):
                 # Sockets to use for outgoing data
                 outputs = []
 
-                # Queue for outgoing data
+                # Dictionary. Key: Connection. Value: Queue for outgoing data.
                 messsage_queues = {}
+
+                # Dictionary. Key: Connection. Value: [Username, Subscribed hashtags].
+                connected_users = {}
 
                 while inputs:
                     readable, writable, exceptional = select.select(inputs, outputs, inputs)
@@ -72,9 +110,8 @@ def server(port):
                             data = s.recv(1024)
                             # If there is data received, handle the data
                             if data:
-                                message_queues[s].put(data)
-                                if s not in outputs:
-                                    outputs.append(s)
+                                handle_request(s, data)
+
                             # If there is no data received, close stream
                             else:
                                 inputs.remove(s)
@@ -100,7 +137,7 @@ def server(port):
                             outputs.remove(s)
                         s.close()
                         del message_queues[s]
-                        
+
             # Ensure that any exception does not shut down the server
             except Exception:
                 pass
