@@ -12,54 +12,72 @@ __copyright__ = "Copyright 2019, Matthew Wang and Tony Tan"
 __license__ = "MIT"
 __version__ = "1.0"
 
-def usage():
-    # TODO: Update Usage Information
-    """
-    Prints out usage information for the progam and then exits.
-    """
-
-    print 'Error. Usage:'
-    print 'To upload: ./ttweetcli.py -u <ServerIP> <ServerPort> "<Message>"'
-    print 'To download: ./ttweetcli.py -d <ServerIP> <ServerPort>'
-    print 'ServerIP and ServerPort must be valid.'
-    print 'Message must be 150 or less characters.'
-    exit()
-
-
-
-def main():
-    """
-    Interprets and responds to the command line arguments.
-    """
-
-    if len(sys.argv) != 4 and len(sys.argv) != 5:
+def argCheck():
+    # Parse and verify command line arguments
+    if (len(sys.argv) != 4):
         usage()
-
-    try:
-        mode = str(sys.argv[1])
-
-        # Verify that the IP is valid
-        IP = str(sys.argv[2])
+    else:
+        # Verify IP
+        IP = str(sys.argv[1])
         if '.' in IP:
             socket.inet_pton(socket.AF_INET, IP)
         elif ':' in IP:
             socket.inet_pton(socket.AF_INET6, IP)
         else:
             usage()
-
-        # Verify that the port number is valid
-        port = int(sys.argv[3])
+        # Verify port number
+        port = int(sys.argv[2])
         if port < 0 or port > 65535:
             usage()
+        # return arguments as tuple
+        return (sys.arv[1], sys.arv[2], sys.arv[3])
 
-        #TODO: Add Implementation Here
+def usage():
+    """
+    Prints out usage information for the progam and then exits.
+    """
+    print('Error. Usage:')
+    print('To start the client and connect to the server, use the following command and format:')
+    print('./ttweetcli.py <ServerIP> <ServerPort> <Username>')
+    print('')
+    print('ServerIP and ServerPort must be valid.')
+    exit()
 
+def runClient(serverHost, serverPort, username):
+    messages = []
+
+    clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    clientSocket.connect((serverHost, serverPort))
+
+    clientSocket.send("set username " + username)
+    exiting = False
+    while not exiting:
+        response = clientSocket.recv(1024)
+        if (response == "command"):
+            command = input("Command: ")
+            if (command == "timeline"):
+                for message in messages:
+                    print(username + " receive message from " + tweet)
+            else:
+                clientSocket.send(command)
+        elif (len(response) > 6 and response[0:6] == "tweet "):
+            messages.append(response[6:])
+        elif (response == "exit"):
+            exiting = True
         else:
-            usage()
+            print(response)
 
+
+
+
+if __name__ == "__main__":
+    """
+    Interprets and responds to the command line arguments.
+    """
+    try:
+        serverHost, serverPort, username = argCheck()
+        runClient(serverHost, serverPort, username)
+    
     # Ensure that any exceptions lead to a graceful exit with usage information
     except Exception:
         usage()
-
-
-main()
