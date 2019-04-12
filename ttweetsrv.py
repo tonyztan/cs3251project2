@@ -17,8 +17,11 @@ __version__ = "1.0"
 # Placeholder variables to make them accessible to all methods
 inputs = []
 outputs = []
-messsage_queues = {}
-connected_users = {}
+message_queues = {}
+
+#List of tuples. [(Username, Connection, Hashtag)]
+connected_users = []
+
 
 def usage():
     """
@@ -29,6 +32,7 @@ def usage():
     print 'ServerPort must be valid.'
     exit()
 
+
 def send_to_client(connection, data):
     """
     This method is used to send the specified data to the connection socket.
@@ -38,24 +42,46 @@ def send_to_client(connection, data):
     if connection not in outputs:
         outputs.append(connection)
 
+
 def handle_request(connection, request):
     if (len(request) > 13) and (request[0:13] == "set username "):
-        # TODO: username logic goes here
+        # username logic
+        requested_username = request[13:]
+        if requested_username in connected_users:
+            send_to_client(connection, "Username already taken. Please choose new username.")
+            send_to_client(connection, "exit")
+        else:
+            connected_users[requested_username] = [connection, []]
+            send_to_client(connection, "Your username is now: " + requested_username)
+            send_to_client(connection, "command")
 
     elif (len(request) > 12) and (request[0:12] == "unsubscribe "):
-        # TODO: unsubscribe logic goes here
+        # unsubscribe logic
+        requested_unsubscribe_keyword = request[13:]
+        # if requested_unsubscribe_keyword in connected_users.get
+
+        pass
 
     elif (len(request) > 10) and (request[0:10] == "subscribe "):
         # TODO: subscribe logic goes here
+        pass
+
+    elif (len(request) == 8) and (request == "timeline"):
+        send_to_client(connection, "command")
 
     elif (len(request) > 6) and (request[0:6] == "tweet "):
         # TODO: tweet logic goes here
+        pass
 
     elif (len(request) == 4) and (request == "exit"):
-        # TODO: exit logic goes here
+        # exit logic
+        send_to_client(connection, "exit")
 
     else:
-        # TODO: invalid request logic goes here
+        # invalid request logic
+        send_to_client(connection, "Invalid Request")
+        send_to_client(connection, "command")
+
 
 # Consulted: https://pymotw.com/2/select/
 def server(port):
@@ -85,8 +111,8 @@ def server(port):
                 # Dictionary. Key: Connection. Value: Queue for outgoing data.
                 messsage_queues = {}
 
-                # Dictionary. Key: Connection. Value: [Username, Subscribed hashtags].
-                connected_users = {}
+                # List of tuples
+                connected_users = []
 
                 while inputs:
                     readable, writable, exceptional = select.select(inputs, outputs, inputs)
@@ -146,6 +172,7 @@ def server(port):
     except:
         usage()
 
+
 def main():
     """
     Interprets and responds to the command line arguments.
@@ -163,5 +190,6 @@ def main():
         usage()
 
     server(port)
+
 
 main()
