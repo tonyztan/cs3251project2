@@ -19,7 +19,7 @@ inputs = []
 outputs = []
 message_queues = {}
 
-#List of tuples. [(Username, Connection, List of Hashtags)]
+# List of tuples. [(Username, Connection, List of Hashtags)]
 connected_users = []
 
 
@@ -33,17 +33,20 @@ def usage():
     print 'ServerPort must be valid.'
     exit()
 
+
 def find_user_by_username(username):
     for i in range(len(connected_users)):
         if username == connected_users[i][0]:
             return i
     return -1
 
+
 def find_user_by_connection(connection):
     for i in range(len(connected_users)):
         if connection == connected_users[i][1]:
             return i
     return -1
+
 
 def find_connections_by_hashtag(hashtag):
     connections = []
@@ -52,8 +55,10 @@ def find_connections_by_hashtag(hashtag):
             connections.append(connected_users[i][1])
     return connections
 
+
 def add_user(username, connection):
     connected_users.append((username, connection, []))
+
 
 def remove_user(user_index):
     del connected_users[user_index]
@@ -135,7 +140,6 @@ def close_connection(connection):
     user_index = find_user_by_connection(connection)
     if (user_index >= 0):
         remove_user(user_index)
-
 
 
 # Consulted: https://pymotw.com/2/select/
