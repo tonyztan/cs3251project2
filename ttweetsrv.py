@@ -14,11 +14,14 @@ __copyright__ = "Copyright 2019, Matthew Wang and Tony Tan"
 __license__ = "MIT"
 __version__ = "1.0"
 
-# Placeholder variables to make them accessible to all methods
+# Sockets to check for incoming data
 inputs = []
-outputs = []
-message_queues = {}
 
+# Sockets to use for outgoing data
+outputs = []
+
+# Dictionary. Key: Connection. Value: Queue for outgoing data.
+messsage_queues = {}
 # List of tuples. [(Username, Connection, List of Hashtags)]
 connected_users = []
 
@@ -87,16 +90,16 @@ def push_tweet(connection, tweet, hashtags):
     username = connected_users[user_index][0]
     tweet = username + ": " + tweet
     connections = []
-    
+
     for i in range(len(connected_users)):
         for hashtag in hashtags:
             if ("ALL" in connected_users[i][2] or hashtag in connected_users[i][2]):
                 connections.append(connected_users[i][1])
                 break
-    
+
     for connection in connections:
         send_to_client(connection, tweet)
-        
+
     if len(connections) == 0:
         return False
     return True
@@ -125,7 +128,7 @@ def handle_request(connection, request):
     if (len(request) > 13) and (request[0:13] == "set username "):
         # username logic
         requested_username = request[13:]
-        if find_user_by_username(requested_username) < 0:
+        if find_user_by_username(requested_username) != -1:
             send_to_client(connection, "Error: Username already taken. Please choose new username.")
             send_to_client(connection, "exit")
             close_connection(connection)
@@ -166,7 +169,8 @@ def handle_request(connection, request):
                 if push_tweet(connection, '"' + trimmed_request, hashtags):
                     send_to_client(connection, "Tweet sent successfully!")
                 else:
-                    send_to_client(connection, "Tweet not sent because no users are subscribed to the specified hashtags.")
+                    send_to_client(connection,
+                                   "Tweet not sent because no users are subscribed to the specified hashtags.")
                 send_to_client(connection, "command")
 
     elif (len(request) == 8) and (request == "timeline"):
@@ -224,16 +228,8 @@ def server(port):
         while True:
             try:
                 # Sockets to check for incoming data
+                global inputs
                 inputs = [server_socket]
-
-                # Sockets to use for outgoing data
-                outputs = []
-
-                # Dictionary. Key: Connection. Value: Queue for outgoing data.
-                messsage_queues = {}
-
-                # List of tuples
-                connected_users = []
 
                 while inputs:
                     readable, writable, exceptional = select.select(inputs, outputs, inputs)
