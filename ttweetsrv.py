@@ -146,7 +146,7 @@ def handle_request(connection, request):
         send_to_client(connection, "command")
 
     elif (len(request) > 11) and (request[0:11] == "subscribe #"):
-        # TODO: subscribe logic goes here
+        hashtag = request[11:]
         message = subscribe(connection, hashtag)
         send_to_client(connection, message)
         send_to_client(connection, "command")
