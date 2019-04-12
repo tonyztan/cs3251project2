@@ -25,7 +25,8 @@ connected_users = []
 
 def usage():
     """
-    Prints out usage information for the progam and then exits.
+    Prints out usage information for the program and then exits.
+    :return: none
     """
 
     print 'Error. Usage: ./ttweetsrv.py <ServerPort>'
@@ -50,8 +51,11 @@ def remove_user(username):
 
 def send_to_client(connection, data):
     """
-    This method is used to send the specified data to the connection socket.
+    Sends the specified data to the specified connection socket.
     It works by adding the information to the appropriate queues.
+    :param connection: The connection to send to.
+    :param data: The data to send.
+    :return: none
     """
     message_queues[connection].put(data)
     if connection not in outputs:
@@ -59,6 +63,12 @@ def send_to_client(connection, data):
 
 
 def handle_request(connection, request):
+    """
+    Handles the specified request from the specified connection.
+    :param connection: The connection associated with the request.
+    :param request: The request to handle.
+    :return: none
+    """
     if (len(request) > 13) and (request[0:13] == "set username "):
         # username logic
         requested_username = request[13:]
@@ -91,17 +101,33 @@ def handle_request(connection, request):
     elif (len(request) == 4) and (request == "exit"):
         # exit logic
         send_to_client(connection, "exit")
+        close_connection(connection)
 
     else:
         # invalid request logic
-        send_to_client(connection, "Invalid Request")
+        send_to_client(connection, "Invalid Command.")
         send_to_client(connection, "command")
+
+
+def close_connection(connection):
+    """
+    Closes the specified connection and removes it from memory.
+    :param connection: The connection to close.
+    :return: none
+    """
+    inputs.remove(connection)
+    if connection in outputs:
+        outputs.remove(connection)
+    connection.close()
+    del message_queues[connection]
 
 
 # Consulted: https://pymotw.com/2/select/
 def server(port):
     """
     Runs the server at the specified port.
+    :param port: The port to run the server on.
+    :return: none
     """
 
     try:
@@ -152,11 +178,7 @@ def server(port):
 
                             # If there is no data received, close stream
                             else:
-                                inputs.remove(s)
-                                if s in outputs:
-                                    outputs.remove(s)
-                                s.close()
-                                del message_queues[s]
+                                close_connection(s)
 
                     # Handle outgoing data
                     for s in writable:
@@ -170,11 +192,7 @@ def server(port):
 
                     # Handle connections with exceptions by closing them
                     for s in exceptional:
-                        inputs.remove(s)
-                        if s in outputs:
-                            outputs.remove(s)
-                        s.close()
-                        del message_queues[s]
+                        close_connection(s)
 
             # Ensure that any exception does not shut down the server
             except Exception:
@@ -191,6 +209,7 @@ def server(port):
 def main():
     """
     Interprets and responds to the command line arguments.
+    :return: none
     """
 
     if len(sys.argv) != 2:
