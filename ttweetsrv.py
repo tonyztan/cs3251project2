@@ -32,6 +32,21 @@ def usage():
     print 'ServerPort must be valid.'
     exit()
 
+def find_user(username):
+    for i in range(len(connected_users)):
+        if username == connected_users[i][0]:
+            return i
+    return -1
+
+
+def add_user(username, connection):
+    connected_users.append((username, connection, []))
+
+def remove_user(username):
+    user_index = find_user(username)
+    if (user_index >= 0):
+        del connected_users[user_index]
+
 
 def send_to_client(connection, data):
     """
@@ -47,11 +62,11 @@ def handle_request(connection, request):
     if (len(request) > 13) and (request[0:13] == "set username "):
         # username logic
         requested_username = request[13:]
-        if requested_username in connected_users:
+        if find_user(requested_username) < 0:
             send_to_client(connection, "Username already taken. Please choose new username.")
             send_to_client(connection, "exit")
         else:
-            connected_users[requested_username] = [connection, []]
+            connected_users.append((requested_username, connection, []))
             send_to_client(connection, "Your username is now: " + requested_username)
             send_to_client(connection, "command")
 
