@@ -75,31 +75,34 @@ def run_client(server_host, server_port, username):
     exiting = False
     while not exiting:
         response = client_socket.recv(1024)
+        responses = response.split('"""')
 
-        # Server tells client it's ready for a command.
-        if response == "command":
-            command = raw_input("Command: ")
+        for response in responses:
+            if response:
+                # Server tells client it's ready for a command.
+                if response == "command":
+                    command = raw_input("Command: ")
 
-            # Carries out command locally if the command is "timeline".
-            if command == "timeline":
-                for message in messages:
-                    print(username + " receive message from " + message)
-            messages = []
-            # Sends command to server.
-            client_socket.send(command)
+                    # Carries out command locally if the command is "timeline".
+                    if command == "timeline":
+                        for message in messages:
+                            print(username + " receive message from " + message)
+                    messages = []
+                    # Sends command to server.
+                    client_socket.send(command)
 
-        # Server sends tweet message to client.
-        elif len(response) > 6 and response[:6] == "tweet ":
-            messages.append(response[6:])
+                # Server sends tweet message to client.
+                elif len(response) > 6 and response[:6] == "tweet ":
+                    messages.append(response[6:])
 
-        # Server tells client to close.
-        elif response == "exit":
-            exiting = True
-            print("Goodbye!")
+                # Server tells client to close.
+                elif response == "exit":
+                    exiting = True
+                    print("Goodbye!")
 
-        # Prints a message from the server.
-        else:
-            print(response)
+                # Prints a message from the server.
+                else:
+                    print(response)
 
 
 if __name__ == "__main__":

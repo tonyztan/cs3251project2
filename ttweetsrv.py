@@ -97,7 +97,7 @@ def push_tweet(connection, tweet, hashtags):
 
     for i in range(len(connected_users)):
         for hashtag in hashtags:
-            if ("ALL" in connected_users[i][2] or hashtag in connected_users[i][2]):
+            if "ALL" in connected_users[i][2] or hashtag in connected_users[i][2]:
                 connections.append(connected_users[i][1])
                 break
 
@@ -117,6 +117,7 @@ def request_send(connection, data):
     :param data: The data to send.
     :return: none
     """
+    data += '"""'
     message_queues[connection].put(data)
     if connection not in outputs:
         outputs.append(connection)
@@ -245,12 +246,12 @@ def server(port):
                     # Handle outgoing data
                     for s in writable:
                         try:
-                            next_message = message_queues[s].get_nowait()
+                            while True:
+                                next_message = message_queues[s].get_nowait()
+                                s.send(next_message)
                         except Queue.Empty:
                             # No message waiting to be sent, remove from list of connections waiting to send
                             outputs.remove(s)
-                        else:
-                            s.send(next_message)
 
                     # Handle connections that need to be closed
                     for s in connections_pending_termination:
