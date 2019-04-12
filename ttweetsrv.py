@@ -59,10 +59,24 @@ def find_connections_by_hashtag(hashtag):
 def add_user(username, connection):
     connected_users.append((username, connection, []))
 
-
 def remove_user(user_index):
     del connected_users[user_index]
 
+def subscribe(connection, hashtag):
+    user_index = find_user_by_connection(connection)
+    if len(connected_users[user_index][2]) < 3):
+        if hashtag in connected_users[user_index][2]:
+            return "Error: You are already subscribed to this hashtag."
+        connected_users[user_index][2].append(hashtag)
+        return "You have successfully subscribed to #" + hashtag
+    return "Error: You are already subscribed to the maximum number of hashtags (3)."
+
+def unsubscribe(connection, hashtag):
+    user_index = find_user_by_connection(connection)
+    if hashtag in connected_users[user_index][2]:
+        connected_users[user_index].remove(hashtag)
+        return "You have succesfully unsubscribed to #" + hashtag
+    return "Error: You are not subscribed to #" + hashtag
 
 def send_to_client(connection, data):
     """
@@ -96,16 +110,19 @@ def handle_request(connection, request):
             send_to_client(connection, "Your username is now: " + requested_username)
             send_to_client(connection, "command")
 
-    elif (len(request) > 12) and (request[0:12] == "unsubscribe "):
+    elif (len(request) > 13) and (request[0:13] == "unsubscribe #"):
         # unsubscribe logic
         hashtag = request[13:]
         # if requested_unsubscribe_keyword in connected_users.get
+        message = unsubscribe(connection, hashtag)
+        send_to_client(connection, message)
+        send_to_client(connection, "command")
 
-        pass
-
-    elif (len(request) > 10) and (request[0:10] == "subscribe "):
+    elif (len(request) > 11) and (request[0:11] == "subscribe #"):
         # TODO: subscribe logic goes here
-        pass
+        message = subscribe(connection, hashtag)
+        send_to_client(connection, message)
+        send_to_client(connection, "command")
 
     elif (len(request) == 8) and (request == "timeline"):
         send_to_client(connection, "command")
