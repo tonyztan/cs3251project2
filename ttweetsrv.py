@@ -190,7 +190,8 @@ def close_connection(connection):
     :param connection: The connection to close.
     :return: none
     """
-    inputs.remove(connection)
+    if connection in inputs:
+        inputs.remove(connection)
     if connection in outputs:
         outputs.remove(connection)
     connection.close()
@@ -240,7 +241,7 @@ def server(port):
                     # Handle incoming data
                     for s in readable:
                         # Handle server sockets that are waiting to accept a connection
-                        if s is server:
+                        if s is server_socket:
                             connection, client_address = s.accept()
                             connection.setblocking(0)
                             inputs.append(connection)
