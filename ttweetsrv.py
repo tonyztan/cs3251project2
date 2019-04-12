@@ -68,8 +68,7 @@ def add_user(username, connection):
 
 
 def remove_user(user_index):
-    if user_index in connected_users:
-        del connected_users[user_index]
+    del connected_users[user_index]
 
 
 def subscribe(connection, hashtag):
