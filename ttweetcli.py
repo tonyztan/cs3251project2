@@ -12,17 +12,22 @@ __copyright__ = "Copyright 2019, Matthew Wang and Tony Tan"
 __license__ = "MIT"
 __version__ = "1.0"
 
-def argCheck():
-    # Parse and verify command line arguments
-    if (len(sys.argv) != 4):
+
+def arg_check():
+    """
+    Parses and verifies command line arguments.
+    :return: none
+    """
+
+    if len(sys.argv) != 4:
         usage()
     else:
-        # Verify IP
-        IP = str(sys.argv[1])
-        if '.' in IP:
-            socket.inet_pton(socket.AF_INET, IP)
-        elif ':' in IP:
-            socket.inet_pton(socket.AF_INET6, IP)
+        # Verify ip
+        ip = str(sys.argv[1])
+        if '.' in ip:
+            socket.inet_pton(socket.AF_INET, ip)
+        elif ':' in ip:
+            socket.inet_pton(socket.AF_INET6, ip)
         else:
             usage()
 
@@ -30,54 +35,65 @@ def argCheck():
         port = int(sys.argv[2])
         if port < 0 or port > 65535:
             usage()
-            
+
         # return arguments as tuple
-        return (sys.argv[1], sys.argv[2], sys.argv[3])
+        return sys.argv[1], sys.argv[2], sys.argv[3]
+
 
 def usage():
     """
-    Prints out usage information for the progam and then exits.
+    Prints out usage information for the program and then exits.
+    :return: none
     """
     print('Error. Usage:')
     print('To start the client and connect to the server, use the following command and format:')
-    print('./ttweetcli.py <ServerIP> <ServerPort> <Username>')
+    print('./ttweetcli.py <Serverip> <ServerPort> <Username>')
     print('')
-    print('ServerIP and ServerPort must be valid.')
+    print('Serverip and ServerPort must be valid.')
     exit()
 
-def runClient(serverHost, serverPort, username):
+
+def run_client(server_host, server_port, username):
+    """
+    Runs the client application.
+    :param server_host: ip address of remote server.
+    :param server_port: Port number of remote application.
+    :param username: Username to use for the connection.
+    :return: none
+    """
+
     # Stores the client's received tweets.
     messages = []
 
     # Connects to server.
-    clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    clientSocket.connect((serverHost, int(serverPort)))
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((server_host, int(server_port)))
 
     # Sends the server the user's username.
-    clientSocket.send("set username " + username)
+    client_socket.send("set username " + username)
 
     exiting = False
     while not exiting:
-        response = clientSocket.recv(1024)
+        response = client_socket.recv(1024)
 
         # Server tells client it's ready for a command.
-        if (response == "command"):
+        if response == "command":
             command = raw_input("Command: ")
 
             # Carries out command locally if the command is "timeline".
-            if (command == "timeline"):
+            if command == "timeline":
                 for message in messages:
                     print(username + " receive message from " + message)
             messages = []
             # Sends command to server.
-            clientSocket.send(command)
-        
+            client_socket.send(command)
+
         # Server sends tweet message to client.
-        elif (len(response) > 6 and response[:6] == "tweet "):
+        elif len(response) > 6 and response[:6] == "tweet ":
             messages.append(response[6:])
-        
+
         # Server tells client to close.
-        elif (response == "exit"):
+        elif response == "exit":
             exiting = True
             print("Goodbye!")
 
@@ -86,15 +102,13 @@ def runClient(serverHost, serverPort, username):
             print(response)
 
 
-
-
 if __name__ == "__main__":
     """
     Interprets and responds to the command line arguments.
     """
     try:
-        serverHost, serverPort, username = argCheck()
-        runClient(serverHost, serverPort, username)
+        host, port, username = arg_check()
+        run_client(host, port, username)
 
     # Ensure that any exceptions lead to a graceful exit with usage information
     except Exception:
