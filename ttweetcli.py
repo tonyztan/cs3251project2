@@ -72,10 +72,13 @@ def run_client(server_host, server_port, username):
     # Sends the server the user's username.
     client_socket.send("set username " + username)
 
-    exiting = False
-    while not exiting:
-        response = client_socket.recv(1024)
-        responses = response.split('"""')
+    while True:
+        server_response = client_socket.recv(1024)
+        if server_response == '':
+            print("Error: Server offline. Exiting.")
+            break
+            
+        responses = server_response.split('"""')
 
         for response in responses:
             if response:
@@ -97,8 +100,8 @@ def run_client(server_host, server_port, username):
 
                 # Server tells client to close.
                 elif response == "exit":
-                    exiting = True
                     print("Goodbye!")
+                    break
 
                 # Prints a message from the server.
                 else:
