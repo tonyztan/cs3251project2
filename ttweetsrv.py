@@ -64,6 +64,10 @@ def remove_user(user_index):
     del connected_users[user_index]
 
 
+def push_tweet(tweet, hashtags):
+    pass
+
+
 def send_to_client(connection, data):
     """
     Sends the specified data to the specified connection socket.
@@ -88,7 +92,7 @@ def handle_request(connection, request):
         # username logic
         requested_username = request[13:]
         if find_user_by_username(requested_username) < 0:
-            send_to_client(connection, "Username already taken. Please choose new username.")
+            send_to_client(connection, "Error: Username already taken. Please choose new username.")
             send_to_client(connection, "exit")
             close_connection(connection)
         else:
@@ -107,12 +111,30 @@ def handle_request(connection, request):
         # TODO: subscribe logic goes here
         pass
 
-    elif (len(request) == 8) and (request == "timeline"):
-        send_to_client(connection, "command")
+    elif (len(request) > 7) and (request[0:7] == 'tweet "'):
+        # tweet logic
+        trimmed_request = request[7:]
+        first_quote_index = trimmed_request.find('"')
+        last_quote_index = trimmed_request.rfind('"')
+        if first_quote_index != last_quote_index:
+            send_to_client(connection, "Error: Content of tweet and hashtags must not contain a quote symbol.")
+            send_to_client(connection, "command")
+        else:
+            tweet = trimmed_request[:first_quote_index]
+            hashtags = trimmed_request[first_quote_index + 1:].split("#")[1:]
+            if len(tweet) < 1 or len(hashtags) < 1:
+                send_to_client(connection, "Error: Tweet and hashtag length must not be zero.")
+                send_to_client(connection, "command")
+            else:
+                if push_tweet(tweet, hashtags):
+                    send_to_client(connection, "Tweet sent successfully!")
+                else:
+                    send_to_client(connection, "Error: Tweet failed to send.")
+                send_to_client(connection, "command")
 
-    elif (len(request) > 6) and (request[0:6] == "tweet "):
-        # TODO: tweet logic goes here
-        pass
+    elif (len(request) == 8) and (request == "timeline"):
+        # timeline logic (client is responsible for displaying timeline)
+        send_to_client(connection, "command")
 
     elif (len(request) == 4) and (request == "exit"):
         # exit logic
@@ -121,7 +143,7 @@ def handle_request(connection, request):
 
     else:
         # invalid request logic
-        send_to_client(connection, "Invalid Command.")
+        send_to_client(connection, "Error: Invalid Command.")
         send_to_client(connection, "command")
 
 
@@ -138,7 +160,7 @@ def close_connection(connection):
     del message_queues[connection]
 
     user_index = find_user_by_connection(connection)
-    if (user_index >= 0):
+    if user_index >= 0:
         remove_user(user_index)
 
 
