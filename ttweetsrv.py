@@ -19,7 +19,7 @@ inputs = []
 outputs = []
 message_queues = {}
 
-#List of tuples. [(Username, Connection, Hashtag)]
+#List of tuples. [(Username, Connection, List of Hashtags)]
 connected_users = []
 
 
