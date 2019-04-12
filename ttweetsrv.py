@@ -22,8 +22,12 @@ outputs = []
 
 # Dictionary. Key: Connection. Value: Queue for outgoing data.
 message_queues = {}
+
 # List of tuples. [(Username, Connection, List of Hashtags)]
 connected_users = []
+
+# Connections that are about to be closed
+connections_pending_termination = []
 
 
 def usage():
@@ -98,14 +102,14 @@ def push_tweet(connection, tweet, hashtags):
                 break
 
     for connection in connections:
-        send_to_client(connection, tweet)
+        request_send(connection, tweet)
 
     if len(connections) == 0:
         return False
     return True
 
 
-def send_to_client(connection, data):
+def request_send(connection, data):
     """
     Sends the specified data to the specified connection socket.
     It works by adding the information to the appropriate queues.
@@ -129,27 +133,27 @@ def handle_request(connection, request):
         # username logic
         requested_username = request[13:]
         if find_user_by_username(requested_username) != -1:
-            send_to_client(connection, "Error: Username already taken. Please choose new username.")
-            send_to_client(connection, "exit")
-            close_connection(connection)
+            request_send(connection, "Error: Username already taken. Please choose new username.")
+            request_send(connection, "exit")
+            request_close(connection)
         else:
             add_user(requested_username, connection)
-            send_to_client(connection, "Your username is now: " + requested_username)
-            send_to_client(connection, "command")
+            request_send(connection, "Your username is now: " + requested_username)
+            request_send(connection, "command")
 
     elif (len(request) > 13) and (request[0:13] == "unsubscribe #"):
         # unsubscribe logic
         hashtag = request[13:]
         # if requested_unsubscribe_keyword in connected_users.get
         message = unsubscribe(connection, hashtag)
-        send_to_client(connection, message)
-        send_to_client(connection, "command")
+        request_send(connection, message)
+        request_send(connection, "command")
 
     elif (len(request) > 11) and (request[0:11] == "subscribe #"):
         # TODO: subscribe logic goes here
         message = subscribe(connection, hashtag)
-        send_to_client(connection, message)
-        send_to_client(connection, "command")
+        request_send(connection, message)
+        request_send(connection, "command")
 
     elif (len(request) > 7) and (request[0:7] == 'tweet "'):
         # tweet logic
@@ -157,35 +161,35 @@ def handle_request(connection, request):
         first_quote_index = trimmed_request.find('"')
         last_quote_index = trimmed_request.rfind('"')
         if first_quote_index != last_quote_index:
-            send_to_client(connection, "Error: Content of tweet and hashtags must not contain a quote symbol.")
-            send_to_client(connection, "command")
+            request_send(connection, "Error: Content of tweet and hashtags must not contain a quote symbol.")
+            request_send(connection, "command")
         else:
             tweet = trimmed_request[:first_quote_index]
             hashtags = trimmed_request[first_quote_index + 1:].split("#")[1:]
             if len(tweet) < 1 or len(hashtags) < 1:
-                send_to_client(connection, "Error: Tweet and hashtag length must not be zero.")
-                send_to_client(connection, "command")
+                request_send(connection, "Error: Tweet and hashtag length must not be zero.")
+                request_send(connection, "command")
             else:
                 if push_tweet(connection, '"' + trimmed_request, hashtags):
-                    send_to_client(connection, "Tweet sent successfully!")
+                    request_send(connection, "Tweet sent successfully!")
                 else:
-                    send_to_client(connection,
-                                   "Tweet not sent because no users are subscribed to the specified hashtags.")
-                send_to_client(connection, "command")
+                    request_send(connection,
+                                 "Tweet not sent because no users are subscribed to the specified hashtags.")
+                request_send(connection, "command")
 
     elif (len(request) == 8) and (request == "timeline"):
         # timeline logic (client is responsible for displaying timeline)
-        send_to_client(connection, "command")
+        request_send(connection, "command")
 
     elif (len(request) == 4) and (request == "exit"):
         # exit logic
-        send_to_client(connection, "exit")
-        close_connection(connection)
+        request_send(connection, "exit")
+        request_close(connection)
 
     else:
         # invalid request logic
-        send_to_client(connection, "Error: Invalid Command.")
-        send_to_client(connection, "command")
+        request_send(connection, "Error: Invalid Command.")
+        request_send(connection, "command")
 
 
 def close_connection(connection):
@@ -204,6 +208,10 @@ def close_connection(connection):
     user_index = find_user_by_connection(connection)
     if user_index >= 0:
         remove_user(user_index)
+
+
+def request_close(connection):
+    connections_pending_termination.append(connection)
 
 
 # Consulted: https://pymotw.com/2/select/
@@ -234,6 +242,24 @@ def server(port):
                 while inputs:
                     readable, writable, exceptional = select.select(inputs, outputs, inputs)
 
+                    # Handle outgoing data
+                    for s in writable:
+                        try:
+                            next_message = message_queues[s].get_nowait()
+                        except Queue.Empty:
+                            # No message waiting to be sent, remove from list of connections waiting to send
+                            outputs.remove(s)
+                        else:
+                            s.send(next_message)
+
+                    # Handle connections that need to be closed
+                    for s in connections_pending_termination:
+                        close_connection(s)
+                        if s in readable:
+                            readable.remove(s)
+                        if s in exceptional:
+                            readable.remove(s)
+
                     # Handle incoming data
                     for s in readable:
                         # Handle server sockets that are waiting to accept a connection
@@ -255,16 +281,6 @@ def server(port):
                             # If there is no data received, close stream
                             else:
                                 close_connection(s)
-
-                    # Handle outgoing data
-                    for s in writable:
-                        try:
-                            next_message = message_queues[s].get_nowait()
-                        except Queue.Empty:
-                            # No message waiting to be sent, remove from list of connections waiting to send
-                            outputs.remove(s)
-                        else:
-                            s.send(next_message)
 
                     # Handle connections with exceptions by closing them
                     for s in exceptional:
