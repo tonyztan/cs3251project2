@@ -84,7 +84,7 @@ def subscribe(connection, hashtag):
 def unsubscribe(connection, hashtag):
     user_index = find_user_by_connection(connection)
     if hashtag in connected_users[user_index][2]:
-        connected_users[user_index].remove(hashtag)
+        connected_users[user_index][2].remove(hashtag)
         return "You have succesfully unsubscribed to #" + hashtag
     return "Error: You are not subscribed to #" + hashtag
 
