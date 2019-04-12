@@ -21,7 +21,7 @@ inputs = []
 outputs = []
 
 # Dictionary. Key: Connection. Value: Queue for outgoing data.
-messsage_queues = {}
+message_queues = {}
 # List of tuples. [(Username, Connection, List of Hashtags)]
 connected_users = []
 
