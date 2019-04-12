@@ -82,8 +82,24 @@ def unsubscribe(connection, hashtag):
     return "Error: You are not subscribed to #" + hashtag
 
 
-def push_tweet(tweet, hashtags):
-    pass
+def push_tweet(connection, tweet, hashtags):
+    user_index = find_user_by_connection(connection)
+    username = connected_users[user_index][0]
+    tweet = username + ": " + tweet
+    connections = []
+    
+    for i in range(len(connected_users)):
+        for hashtag in hashtags:
+            if ("ALL" in connected_users[i][2] or hashtag in connected_users[i][2]):
+                connections.append(connected_users[i][1])
+                break
+    
+    for connection in connections:
+        send_to_client(connection, tweet)
+        
+    if len(connections) == 0:
+        return False
+    return True
 
 
 def send_to_client(connection, data):
@@ -147,10 +163,10 @@ def handle_request(connection, request):
                 send_to_client(connection, "Error: Tweet and hashtag length must not be zero.")
                 send_to_client(connection, "command")
             else:
-                if push_tweet(tweet, hashtags):
+                if push_tweet(connection, '"' + trimmed_request, hashtags):
                     send_to_client(connection, "Tweet sent successfully!")
                 else:
-                    send_to_client(connection, "Error: Tweet failed to send.")
+                    send_to_client(connection, "Tweet not sent because no users are subscribed to the specified hashtags.")
                 send_to_client(connection, "command")
 
     elif (len(request) == 8) and (request == "timeline"):
