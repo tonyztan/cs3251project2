@@ -25,12 +25,14 @@ def argCheck():
             socket.inet_pton(socket.AF_INET6, IP)
         else:
             usage()
+
         # Verify port number
         port = int(sys.argv[2])
         if port < 0 or port > 65535:
             usage()
+            
         # return arguments as tuple
-        return (sys.arv[1], sys.arv[2], sys.arv[3])
+        return (sys.argv[1], sys.argv[2], sys.argv[3])
 
 def usage():
     """
@@ -49,7 +51,7 @@ def runClient(serverHost, serverPort, username):
 
     # Connects to server.
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    clientSocket.connect((serverHost, serverPort))
+    clientSocket.connect((serverHost, int(serverPort)))
 
     # Sends the server the user's username.
     clientSocket.send("set username " + username)
@@ -60,13 +62,13 @@ def runClient(serverHost, serverPort, username):
 
         # Server tells client it's ready for a command.
         if (response == "command"):
-            command = input("Command: ")
+            command = raw_input("Command: ")
 
             # Carries out command locally if the command is "timeline".
             if (command == "timeline"):
                 for message in messages:
-                    print(username + " receive message from " + tweet)
-            
+                    print(username + " receive message from " + message)
+            messages = []
             # Sends command to server.
             clientSocket.send(command)
         
@@ -77,6 +79,7 @@ def runClient(serverHost, serverPort, username):
         # Server tells client to close.
         elif (response == "exit"):
             exiting = True
+            print("Goodbye!")
 
         # Prints a message from the server.
         else:
@@ -92,7 +95,7 @@ if __name__ == "__main__":
     try:
         serverHost, serverPort, username = argCheck()
         runClient(serverHost, serverPort, username)
-    
+
     # Ensure that any exceptions lead to a graceful exit with usage information
     except Exception:
         usage()
