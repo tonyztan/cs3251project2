@@ -33,20 +33,30 @@ def usage():
     print 'ServerPort must be valid.'
     exit()
 
-def find_user(username):
+def find_user_by_username(username):
     for i in range(len(connected_users)):
         if username == connected_users[i][0]:
             return i
     return -1
 
+def find_user_by_connection(connection):
+    for i in range(len(connected_users)):
+        if connection == connected_users[i][1]:
+            return i
+    return -1
+
+def find_connections_by_hashtag(hashtag):
+    connections = []
+    for i in range(len(connected_users)):
+        if hashtag in connected_users[i][2]:
+            connections.append(connected_users[i][1])
+    return connections
 
 def add_user(username, connection):
     connected_users.append((username, connection, []))
 
-def remove_user(username):
-    user_index = find_user(username)
-    if (user_index >= 0):
-        del connected_users[user_index]
+def remove_user(user_index):
+    del connected_users[user_index]
 
 
 def send_to_client(connection, data):
@@ -72,17 +82,18 @@ def handle_request(connection, request):
     if (len(request) > 13) and (request[0:13] == "set username "):
         # username logic
         requested_username = request[13:]
-        if find_user(requested_username) < 0:
+        if find_user_by_username(requested_username) < 0:
             send_to_client(connection, "Username already taken. Please choose new username.")
             send_to_client(connection, "exit")
+            close_connection(connection)
         else:
-            connected_users.append((requested_username, connection, []))
+            add_user(requested_username, connection)
             send_to_client(connection, "Your username is now: " + requested_username)
             send_to_client(connection, "command")
 
     elif (len(request) > 12) and (request[0:12] == "unsubscribe "):
         # unsubscribe logic
-        requested_unsubscribe_keyword = request[13:]
+        hashtag = request[13:]
         # if requested_unsubscribe_keyword in connected_users.get
 
         pass
@@ -120,6 +131,11 @@ def close_connection(connection):
         outputs.remove(connection)
     connection.close()
     del message_queues[connection]
+
+    user_index = find_user_by_connection(connection)
+    if (user_index >= 0):
+        remove_user(user_index)
+
 
 
 # Consulted: https://pymotw.com/2/select/
