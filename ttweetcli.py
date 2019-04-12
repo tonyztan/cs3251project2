@@ -44,26 +44,41 @@ def usage():
     exit()
 
 def runClient(serverHost, serverPort, username):
+    # Stores the client's received tweets.
     messages = []
 
+    # Connects to server.
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((serverHost, serverPort))
 
+    # Sends the server the user's username.
     clientSocket.send("set username " + username)
+
     exiting = False
     while not exiting:
         response = clientSocket.recv(1024)
+
+        # Server tells client it's ready for a command.
         if (response == "command"):
             command = input("Command: ")
+
+            # Carries out command locally if the command is "timeline".
             if (command == "timeline"):
                 for message in messages:
                     print(username + " receive message from " + tweet)
-            else:
-                clientSocket.send(command)
-        elif (len(response) > 6 and response[0:6] == "tweet "):
+            
+            # Sends command to server.
+            clientSocket.send(command)
+        
+        # Server sends tweet message to client.
+        elif (len(response) > 6 and response[:6] == "tweet "):
             messages.append(response[6:])
+        
+        # Server tells client to close.
         elif (response == "exit"):
             exiting = True
+
+        # Prints a message from the server.
         else:
             print(response)
 
