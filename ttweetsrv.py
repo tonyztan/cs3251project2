@@ -68,7 +68,8 @@ def add_user(username, connection):
 
 
 def remove_user(user_index):
-    del connected_users[user_index]
+    if user_index in connected_users:
+        del connected_users[user_index]
 
 
 def subscribe(connection, hashtag):
@@ -203,11 +204,13 @@ def close_connection(connection):
         inputs.remove(connection)
     if connection in outputs:
         outputs.remove(connection)
+    if connection in message_queues:
+        del message_queues[connection]
+
     connection.close()
-    del message_queues[connection]
 
     user_index = find_user_by_connection(connection)
-    if user_index >= 0:
+    if user_index != -1:
         remove_user(user_index)
 
 
@@ -260,6 +263,8 @@ def server(port):
                             readable.remove(s)
                         if s in exceptional:
                             readable.remove(s)
+
+                        connections_pending_termination.remove(s)
 
                     # Handle incoming data
                     for s in readable:
