@@ -59,17 +59,20 @@ def find_connections_by_hashtag(hashtag):
 def add_user(username, connection):
     connected_users.append((username, connection, []))
 
+
 def remove_user(user_index):
     del connected_users[user_index]
 
+
 def subscribe(connection, hashtag):
     user_index = find_user_by_connection(connection)
-    if len(connected_users[user_index][2]) < 3):
+    if len(connected_users[user_index][2]) < 3:
         if hashtag in connected_users[user_index][2]:
             return "Error: You are already subscribed to this hashtag."
         connected_users[user_index][2].append(hashtag)
         return "You have successfully subscribed to #" + hashtag
     return "Error: You are already subscribed to the maximum number of hashtags (3)."
+
 
 def unsubscribe(connection, hashtag):
     user_index = find_user_by_connection(connection)
@@ -77,6 +80,7 @@ def unsubscribe(connection, hashtag):
         connected_users[user_index].remove(hashtag)
         return "You have succesfully unsubscribed to #" + hashtag
     return "Error: You are not subscribed to #" + hashtag
+
 
 def push_tweet(tweet, hashtags):
     pass
