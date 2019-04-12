@@ -92,7 +92,7 @@ def unsubscribe(connection, hashtag):
 def push_tweet(connection, tweet, hashtags):
     user_index = find_user_by_connection(connection)
     username = connected_users[user_index][0]
-    tweet = username + ": " + tweet
+    tweet = "tweet " + username + ": " + tweet
     connections = []
 
     for i in range(len(connected_users)):
