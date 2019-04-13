@@ -1,0 +1,41 @@
+////////////////////////////////////////////////////////////////////////////////
+// Sample Input and Output                                                    //
+////////////////////////////////////////////////////////////////////////////////
+The following is a test scenario provided in the project description.
+See section 2.3 of "3251 Project 2 - Spring 2019.pdf" for details.
+
+Server:
+$ ./ttweetsrv.py 8080
+Server is running. Ctrl + C to quit.
+
+Client 1:
+./ttweetcli.py 127.0.0.1 8080 Matthew
+Your username is now: Matthew
+Command: subscribe #3251
+You have successfully subscribed to #3251
+
+Client 2:
+./ttweetcli.py 127.0.0.1 8080 Tony
+Your username is now: Tony
+Command: subscribe #ALL
+You have successfully subscribed to #ALL
+Command: tweet "Hello from client 2" #3251
+Tweet sent successfully!
+
+Client 1:
+Command: timeline
+Matthew receive message from Tony: "Hello from client 2" #3251
+Command: timeline
+Command: tweet "Hello from client 1" #random
+Tweet sent successfully!
+
+Client 2:
+Command: timeline
+Tony receive message from Tony: "Hello from client 2" #3251
+Tony receive message from Matthew: "Hello from client 1" #random
+Command: exit
+Goodbye!
+
+Client 1:
+Command: exit
+Goodbye!
