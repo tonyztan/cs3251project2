@@ -11,12 +11,12 @@ Date: 04/13/2019
 
 Assignment: Programming Assignment 2
 
-Provided files: 
+Included files: 
 "3251 Project 2 - Spring 2019.pdf"      Project description
 README.txt                              README document
 Sample.txt                              Inputs and outputs of test scenarios
-ttweetsrv.py                            The python file for the server
 ttweetcli.py                            The python file for the clients
+ttweetsrv.py                            The python file for the server
 
 ////////////////////////////////////////////////////////////////////////////////
 // Instructions                                                               //
