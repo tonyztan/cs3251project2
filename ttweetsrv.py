@@ -41,186 +41,10 @@ def usage():
     exit()
 
 
-def find_user_by_username(username):
-    for i in range(len(connected_users)):
-        if username == connected_users[i][0]:
-            return i
-    return -1
-
-
-def find_user_by_connection(connection):
-    for i in range(len(connected_users)):
-        if connection == connected_users[i][1]:
-            return i
-    return -1
-
-
-def find_connections_by_hashtag(hashtag):
-    connections = []
-    for i in range(len(connected_users)):
-        if hashtag in connected_users[i][2]:
-            connections.append(connected_users[i][1])
-    return connections
-
-
-def add_user(username, connection):
-    connected_users.append((username, connection, []))
-
-
-def remove_user(user_index):
-    del connected_users[user_index]
-
-
-def subscribe(connection, hashtag):
-    user_index = find_user_by_connection(connection)
-    if len(connected_users[user_index][2]) < 3:
-        if hashtag in connected_users[user_index][2]:
-            return "Error: You are already subscribed to this hashtag."
-        connected_users[user_index][2].append(hashtag)
-        return "You have successfully subscribed to #" + hashtag
-    return "Error: You are already subscribed to the maximum number of hashtags (3)."
-
-
-def unsubscribe(connection, hashtag):
-    user_index = find_user_by_connection(connection)
-    if hashtag in connected_users[user_index][2]:
-        connected_users[user_index][2].remove(hashtag)
-        return "You have succesfully unsubscribed to #" + hashtag
-    return "Error: You are not subscribed to #" + hashtag
-
-
-def push_tweet(connection, tweet, hashtags):
-    user_index = find_user_by_connection(connection)
-    username = connected_users[user_index][0]
-    tweet = "tweet " + username + ": " + tweet
-    connections = []
-
-    for i in range(len(connected_users)):
-        for hashtag in hashtags:
-            if "ALL" in connected_users[i][2] or hashtag in connected_users[i][2]:
-                connections.append(connected_users[i][1])
-                break
-
-    for connection in connections:
-        request_send(connection, tweet)
-
-    if len(connections) == 0:
-        return False
-    return True
-
-
-def request_send(connection, data):
-    """
-    Sends the specified data to the specified connection socket.
-    It works by adding the information to the appropriate queues.
-    :param connection: The connection to send to.
-    :param data: The data to send.
-    :return: none
-    """
-    data += '"""'
-    message_queues[connection].put(data)
-    if connection not in outputs:
-        outputs.append(connection)
-
-
-def handle_request(connection, request):
-    """
-    Handles the specified request from the specified connection.
-    :param connection: The connection associated with the request.
-    :param request: The request to handle.
-    :return: none
-    """
-    if (len(request) > 13) and (request[0:13] == "set username "):
-        # username logic
-        requested_username = request[13:]
-        if find_user_by_username(requested_username) != -1:
-            request_send(connection, "Error: Username already taken. Please choose new username.")
-            request_send(connection, "exit")
-            request_close(connection)
-        else:
-            add_user(requested_username, connection)
-            request_send(connection, "Your username is now: " + requested_username)
-            request_send(connection, "command")
-
-    elif (len(request) > 13) and (request[0:13] == "unsubscribe #"):
-        # unsubscribe logic
-        hashtag = request[13:]
-        # if requested_unsubscribe_keyword in connected_users.get
-        message = unsubscribe(connection, hashtag)
-        request_send(connection, message)
-        request_send(connection, "command")
-
-    elif (len(request) > 11) and (request[0:11] == "subscribe #"):
-        hashtag = request[11:]
-        message = subscribe(connection, hashtag)
-        request_send(connection, message)
-        request_send(connection, "command")
-
-    elif (len(request) > 7) and (request[0:7] == 'tweet "'):
-        # tweet logic
-        trimmed_request = request[7:]
-        first_quote_index = trimmed_request.find('"')
-        last_quote_index = trimmed_request.rfind('"')
-        if first_quote_index != last_quote_index:
-            request_send(connection, "Error: Content of tweet and hashtags must not contain a quote symbol.")
-            request_send(connection, "command")
-        else:
-            tweet = trimmed_request[:first_quote_index]
-            hashtags = trimmed_request[first_quote_index + 1:].split("#")[1:]
-            if len(tweet) < 1 or len(hashtags) < 1:
-                request_send(connection, "Error: Tweet and hashtag length must not be zero.")
-                request_send(connection, "command")
-            else:
-                if push_tweet(connection, '"' + trimmed_request, hashtags):
-                    request_send(connection, "Tweet sent successfully!")
-                else:
-                    request_send(connection,
-                                 "Tweet not sent because no users are subscribed to the specified hashtags.")
-                request_send(connection, "command")
-
-    elif (len(request) == 8) and (request == "timeline"):
-        # timeline logic (client is responsible for displaying timeline)
-        request_send(connection, "command")
-
-    elif (len(request) == 4) and (request == "exit"):
-        # exit logic
-        request_send(connection, "exit")
-        request_close(connection)
-
-    else:
-        # invalid request logic
-        request_send(connection, "Error: Invalid Command.")
-        request_send(connection, "command")
-
-
-def close_connection(connection):
-    """
-    Closes the specified connection and removes it from memory.
-    :param connection: The connection to close.
-    :return: none
-    """
-    if connection in inputs:
-        inputs.remove(connection)
-    if connection in outputs:
-        outputs.remove(connection)
-    if connection in message_queues:
-        del message_queues[connection]
-
-    connection.close()
-
-    user_index = find_user_by_connection(connection)
-    if user_index != -1:
-        remove_user(user_index)
-
-
-def request_close(connection):
-    connections_pending_termination.append(connection)
-
-
-# Consulted: https://pymotw.com/2/select/
-def server(port):
+def run_server(port):
     """
     Runs the server at the specified port.
+    Consulted: https://pymotw.com/2/select/
     :param port: The port to run the server on.
     :return: none
     """
@@ -303,24 +127,209 @@ def server(port):
         usage()
 
 
-def main():
+# Application layer functions
+
+
+def handle_request(connection, request):
+    """
+    Handles the specified request from the specified connection.
+    :param connection: The connection associated with the request.
+    :param request: The request to handle.
+    :return: none
+    """
+    if (len(request) > 13) and (request[0:13] == "set username "):
+        # username logic
+        requested_username = request[13:]
+        if find_user_by_username(requested_username) != -1:
+            request_send(connection, "Error: Username already taken. Please choose new username.")
+            request_send(connection, "exit")
+            request_close(connection)
+        else:
+            add_user(requested_username, connection)
+            request_send(connection, "Your username is now: " + requested_username)
+            request_send(connection, "command")
+
+    elif (len(request) > 13) and (request[0:13] == "unsubscribe #"):
+        # unsubscribe logic
+        hashtag = request[13:]
+        # if requested_unsubscribe_keyword in connected_users.get
+        message = unsubscribe(connection, hashtag)
+        request_send(connection, message)
+        request_send(connection, "command")
+
+    elif (len(request) > 11) and (request[0:11] == "subscribe #"):
+        hashtag = request[11:]
+        message = subscribe(connection, hashtag)
+        request_send(connection, message)
+        request_send(connection, "command")
+
+    elif (len(request) > 7) and (request[0:7] == 'tweet "'):
+        # tweet logic
+        trimmed_request = request[7:]
+        first_quote_index = trimmed_request.find('"')
+        last_quote_index = trimmed_request.rfind('"')
+        if first_quote_index != last_quote_index:
+            request_send(connection, "Error: Content of tweet and hashtags must not contain a quote symbol.")
+            request_send(connection, "command")
+        else:
+            tweet = trimmed_request[:first_quote_index]
+            hashtags = trimmed_request[first_quote_index + 1:].split("#")[1:]
+            if len(tweet) < 1 or len(hashtags) < 1:
+                request_send(connection, "Error: Tweet and hashtag length must not be zero.")
+                request_send(connection, "command")
+            else:
+                if push_tweet_to_clients(connection, '"' + trimmed_request, hashtags):
+                    request_send(connection, "Tweet sent successfully!")
+                else:
+                    request_send(connection,
+                                 "Tweet not sent because no users are subscribed to the specified hashtags.")
+                request_send(connection, "command")
+
+    elif (len(request) == 8) and (request == "timeline"):
+        # timeline logic (client is responsible for displaying timeline)
+        request_send(connection, "command")
+
+    elif (len(request) == 4) and (request == "exit"):
+        # exit logic
+        request_send(connection, "exit")
+        request_close(connection)
+
+    else:
+        # invalid request logic
+        request_send(connection, "Error: Invalid Command.")
+        request_send(connection, "command")
+
+
+def add_user(username, connection):
+    connected_users.append((username, connection, []))
+
+
+def remove_user(user_index):
+    del connected_users[user_index]
+
+
+def subscribe(connection, hashtag):
+    user_index = find_user_by_connection(connection)
+    if len(connected_users[user_index][2]) < 3:
+        if hashtag in connected_users[user_index][2]:
+            return "Error: You are already subscribed to this hashtag."
+        connected_users[user_index][2].append(hashtag)
+        return "You have successfully subscribed to #" + hashtag
+    return "Error: You are already subscribed to the maximum number of hashtags (3)."
+
+
+def unsubscribe(connection, hashtag):
+    user_index = find_user_by_connection(connection)
+    if hashtag in connected_users[user_index][2]:
+        connected_users[user_index][2].remove(hashtag)
+        return "You have succesfully unsubscribed to #" + hashtag
+    return "Error: You are not subscribed to #" + hashtag
+
+
+def push_tweet_to_clients(connection, tweet, hashtags):
+    """
+    Pushes tweets to clients who are subscribed to the matching hashtags.
+    :param connection: The connection that the tweet originated from.
+    :param tweet: The tweet to push to clients.
+    :param hashtags: The tweet's hashtags.
+    :return:
+    """
+    user_index = find_user_by_connection(connection)
+    username = connected_users[user_index][0]
+    tweet = "tweet " + username + ": " + tweet
+    connections = []
+
+    for i in range(len(connected_users)):
+        for hashtag in hashtags:
+            if "ALL" in connected_users[i][2] or hashtag in connected_users[i][2]:
+                connections.append(connected_users[i][1])
+                break
+
+    for connection in connections:
+        request_send(connection, tweet)
+
+    if len(connections) == 0:
+        return False
+    return True
+
+
+def find_user_by_username(username):
+    for i in range(len(connected_users)):
+        if username == connected_users[i][0]:
+            return i
+    return -1
+
+
+def find_user_by_connection(connection):
+    for i in range(len(connected_users)):
+        if connection == connected_users[i][1]:
+            return i
+    return -1
+
+
+def find_connections_by_hashtag(hashtag):
+    connections = []
+    for i in range(len(connected_users)):
+        if hashtag in connected_users[i][2]:
+            connections.append(connected_users[i][1])
+    return connections
+
+
+# Transport layer functions
+
+
+def request_send(connection, data):
+    """
+    Requests to send the specified data to the specified connection socket.
+    It works by adding the information to the appropriate queues.
+    :param connection: The connection to send to.
+    :param data: The data to send.
+    :return: none
+    """
+    data += '"""'
+    message_queues[connection].put(data)
+    if connection not in outputs:
+        outputs.append(connection)
+
+
+def request_close(connection):
+    connections_pending_termination.append(connection)
+
+
+def close_connection(connection):
+    """
+    Requests the closure of the specified connection.
+    :param connection: The connection to close.
+    :return: none
+    """
+    if connection in inputs:
+        inputs.remove(connection)
+    if connection in outputs:
+        outputs.remove(connection)
+    if connection in message_queues:
+        del message_queues[connection]
+
+    connection.close()
+
+    user_index = find_user_by_connection(connection)
+    if user_index != -1:
+        remove_user(user_index)
+
+
+if __name__ == "__main__":
     """
     Interprets and responds to the command line arguments.
-    :return: none
     """
 
     if len(sys.argv) != 2:
         usage()
 
     try:
-        port = int(sys.argv[1])
+        server_port = int(sys.argv[1])
     except ValueError:
         usage()
 
-    if port < 0 or port > 65535:
+    if server_port < 0 or server_port > 65535:
         usage()
 
-    server(port)
-
-
-main()
+    run_server(server_port)

@@ -76,8 +76,8 @@ def run_client(server_host, server_port, username):
         server_response = client_socket.recv(1024)
         if server_response == '':
             print("Error: Server offline. Exiting.")
-            break
-            
+            return
+
         responses = server_response.split('"""')
 
         for response in responses:
@@ -101,7 +101,7 @@ def run_client(server_host, server_port, username):
                 # Server tells client to close.
                 elif response == "exit":
                     print("Goodbye!")
-                    break
+                    return
 
                 # Prints a message from the server.
                 else:
