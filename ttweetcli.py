@@ -47,9 +47,9 @@ def usage():
     """
     print('Error. Usage:')
     print('To start the client and connect to the server, use the following command and format:')
-    print('./ttweetcli.py <Serverip> <ServerPort> <Username>')
+    print('./ttweetcli.py <ServerIP> <ServerPort> <Username>')
     print('')
-    print('Serverip and ServerPort must be valid.')
+    print('ServerIP, ServerPort, and Username must be valid.')
     exit()
 
 
