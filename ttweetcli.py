@@ -72,6 +72,8 @@ def run_client(server_host, server_port, username):
     # Sends the server the user's username.
     client_socket.send("set username " + username)
 
+    timeline_requested = False
+
     while True:
         server_response = client_socket.recv(1024)
         if server_response == '':
@@ -84,13 +86,20 @@ def run_client(server_host, server_port, username):
             if response:
                 # Server tells client it's ready for a command.
                 if response == "command":
+                    if timeline_requested:
+                        for message in messages:
+                            print(username + " receive message from " + message)
+                        messages = []
+                        timeline_requested = False
+
                     command = raw_input("Command: ")
 
                     # Carries out command locally if the command is "timeline".
                     if command == "timeline":
                         for message in messages:
                             print(username + " receive message from " + message)
-                    messages = []
+                        messages = []
+                        timeline_requested = True
                     # Sends command to server.
                     client_socket.send(command)
 
