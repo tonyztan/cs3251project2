@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 Authors: Matthew Wang (mwang400@gatech.edu) and Tony Tan (tonytan@gatech.edu)
 
-Class name: CS-3251-A (Note: Tony Tan is in section B, but this assignment was
+Class Name: CS-3251-A (Note: Tony Tan is in section B, but this assignment was
 completed based on the requirements of section A.
 See "3251 Project 2 - Spring 2019.pdf" for details.)
 
@@ -11,7 +11,7 @@ Date: 04/13/2019
 
 Assignment: Programming Assignment 2
 
-Included files: 
+Included Files: 
 "3251 Project 2 - Spring 2019.pdf"      Project description
 README.txt                              README document
 Sample.txt                              Inputs and outputs of test scenarios
