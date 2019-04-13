@@ -174,7 +174,10 @@ def handle_request(connection, request):
         else:
             tweet = trimmed_request[:first_quote_index]
             hashtags = trimmed_request[first_quote_index + 1:].split("#")[1:]
-            if len(tweet) < 1 or len(hashtags) < 1:
+            if len(tweet) > 150:
+                request_send(connection, "Error: Tweet cannot exceed 150 characters.")
+                request_send(connection, "command")
+            elif len(tweet) < 1 or len(hashtags) < 1 or hashtags == ['']:
                 request_send(connection, "Error: Tweet and hashtag length must not be zero.")
                 request_send(connection, "command")
             else:
